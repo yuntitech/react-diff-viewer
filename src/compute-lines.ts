@@ -145,6 +145,7 @@ const computeLineInformation = (
 	disableWordDiff: boolean = false,
 	compareMethod: string = DiffMethod.CHARS,
 	linesOffset: number = 0,
+	linesOffsetOfRight: number = 0,
 ): ComputedLineInformation => {
 	const diffArray = diff.diffLines(
 		oldString.trimRight(),
@@ -155,7 +156,7 @@ const computeLineInformation = (
 			ignoreCase: false,
 		},
 	);
-	let rightLineNumber = linesOffset;
+	let rightLineNumber = linesOffsetOfRight;
 	let leftLineNumber = linesOffset;
 	let lineInformation: LineInformation[] = [];
 	let counter = 0;
