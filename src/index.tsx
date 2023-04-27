@@ -24,7 +24,16 @@ export enum LineNumberPrefix {
 	RIGHT = 'R',
 }
 
+export interface CommitInfo {
+	commitUrl:string;
+	message:string;
+	authorName:string;
+	committedDate:string;
+}
+
 export interface ReactDiffViewerProps {
+	// Commits
+	commitMap: Map<number,CommitInfo>;
 	// Old value to compare.
 	oldValue: string;
 	// New value to compare.
@@ -57,6 +66,10 @@ export interface ReactDiffViewerProps {
 		lineId: string,
 		event: React.MouseEvent<HTMLTableCellElement>,
 	) => void;
+	onAuthorClick?: (
+		commitInfo: CommitInfo,
+		event: React.MouseEvent<HTMLTableCellElement>,
+	) => void;
 	// Array of line ids to highlight lines.
 	highlightLines?: string[];
 	// Style overrides.
@@ -79,6 +92,7 @@ class DiffViewer extends React.Component<
 	ReactDiffViewerState
 > {
 	private styles: ReactDiffViewerStyles;
+	private lastAuthorLines:number[] = [0];
 
 	public static defaultProps: ReactDiffViewerProps = {
 		oldValue: '',
@@ -94,6 +108,7 @@ class DiffViewer extends React.Component<
 		useDarkTheme: false,
 		linesOffset: 0,
 		linesOffsetOfRight: 0,
+		commitMap: new Map(),
 	};
 
 	public static propTypes = {
@@ -104,6 +119,7 @@ class DiffViewer extends React.Component<
 		compareMethod: PropTypes.oneOf(Object.values(DiffMethod)),
 		renderContent: PropTypes.func,
 		onLineNumberClick: PropTypes.func,
+		onAuthorClick: PropTypes.func,
 		extraLinesSurroundingDiff: PropTypes.number,
 		styles: PropTypes.object,
 		hideLineNumbers: PropTypes.bool,
@@ -174,6 +190,14 @@ class DiffViewer extends React.Component<
 		return (): void => {};
 	};
 
+	private onAuthorClickProxy = (commitInfo: CommitInfo): any => {
+		if (this.props.onAuthorClick) {
+			return (e: any): void => this.props.onAuthorClick(commitInfo, e);
+		}
+		return (): void => {
+		};
+	};
+
 	/**
 	 * Maps over the word diff and constructs the required React elements to show word diff.
 	 *
@@ -220,6 +244,9 @@ class DiffViewer extends React.Component<
 		value: string | DiffInformation[],
 		additionalLineNumber?: number,
 		additionalPrefix?: LineNumberPrefix,
+		isRightEmpty?: boolean,
+		commitMap?: Map<number, CommitInfo>,
+		authorMinW?: number,
 	): JSX.Element => {
 		const lineNumberTemplate = `${prefix}-${lineNumber}`;
 		const additionalLineNumberTemplate = `${additionalPrefix}-${additionalLineNumber}`;
@@ -250,7 +277,7 @@ class DiffViewer extends React.Component<
 							[this.styles.diffRemoved]: removed,
 							[this.styles.highlightedGutter]: highlightLine,
 						})}>
-						<pre className={this.styles.lineNumber}>{lineNumber}</pre>
+						{this.renderAuthor({lineNumber, prefix, added, removed, isRightEmpty, commitMap, authorMinW})}
 					</td>
 				)}
 				{!this.props.splitView && !this.props.hideLineNumbers && (
@@ -293,6 +320,34 @@ class DiffViewer extends React.Component<
 		);
 	};
 
+	private renderAuthor = (props: { lineNumber: number, prefix: LineNumberPrefix, added: boolean, removed: boolean, isRightEmpty?: boolean, commitMap?: Map<number, CommitInfo>, authorMinW?: number, }): JSX.Element => {
+		const {lineNumber, prefix, added, removed, isRightEmpty, commitMap, authorMinW} = props;
+		const showAuthorOfRight = LineNumberPrefix.RIGHT === prefix && (added || removed);
+		const showAuthorOfLeft = LineNumberPrefix.LEFT === prefix && (added || removed) && isRightEmpty;
+		if (showAuthorOfRight || showAuthorOfLeft) {
+			if (!this.lastAuthorLines.includes(lineNumber)) {
+				this.lastAuthorLines.push(lineNumber);
+			}
+			const index = this.lastAuthorLines.findIndex(item => item === lineNumber);
+			if (index) {
+				const prevIndex = Math.max(index - 1, 0);
+				const prevLineNumber = this.lastAuthorLines[prevIndex];
+				// 连续的改动只显示一个作者信息
+				if (prevLineNumber + 1 === lineNumber) {
+					return <pre className={this.styles.lineNumber}>{lineNumber}</pre>;
+				}
+			}
+			const commitInfo = commitMap != null ? commitMap.get(lineNumber) : null;
+			if (commitInfo == null) {
+				return <pre className={this.styles.lineNumber}>{lineNumber}</pre>;
+			}
+			return <pre className={this.styles.lineNumber} style={{minWidth: authorMinW || 52}}><span
+				onClick={this.onAuthorClickProxy(commitInfo)}>{`${commitInfo.authorName} `}</span>{lineNumber}</pre>;
+		} else {
+			return <pre className={this.styles.lineNumber}>{lineNumber}</pre>;
+		}
+	}
+
 	/**
 	 * Generates lines for split view.
 	 *
@@ -304,6 +359,8 @@ class DiffViewer extends React.Component<
 	private renderSplitView = (
 		{ left, right }: LineInformation,
 		index: number,
+		commitMap: Map<number, CommitInfo>,
+		authorMinW: number,
 	): JSX.Element => {
 		return (
 			<tr key={index} className={this.styles.line}>
@@ -312,12 +369,22 @@ class DiffViewer extends React.Component<
 					left.type,
 					LineNumberPrefix.LEFT,
 					left.value,
+					undefined,
+					undefined,
+					right.value == null,
+					commitMap,
+					authorMinW,
 				)}
 				{this.renderLine(
 					right.lineNumber,
 					right.type,
 					LineNumberPrefix.RIGHT,
 					right.value,
+					undefined,
+					undefined,
+					undefined,
+					commitMap,
+					authorMinW,
 				)}
 			</tr>
 		);
@@ -334,6 +401,8 @@ class DiffViewer extends React.Component<
 	public renderInlineView = (
 		{ left, right }: LineInformation,
 		index: number,
+		commitMap: Map<number, CommitInfo>,
+		authorMinW: number,
 	): JSX.Element => {
 		let content;
 		if (left.type === DiffType.REMOVED && right.type === DiffType.ADDED) {
@@ -478,7 +547,8 @@ class DiffViewer extends React.Component<
 			disableWordDiff,
 			compareMethod,
 			linesOffset,
-			linesOffsetOfRight
+			linesOffsetOfRight,
+			commitMap,
 		} = this.props;
 		const { lineInformation, diffLines } = computeLineInformation(
 			oldValue,
@@ -488,10 +558,11 @@ class DiffViewer extends React.Component<
 			linesOffset,
 			linesOffsetOfRight,
 		);
+		const authorMinW = diffLines[diffLines.length - 1] >= 1000 ? 60 : 52;
 		const extraLines =
 			this.props.extraLinesSurroundingDiff < 0
-				? 0
-				: this.props.extraLinesSurroundingDiff;
+			  ? 0
+			  : this.props.extraLinesSurroundingDiff;
 		let skippedLines: number[] = [];
 		return lineInformation.map(
 			(line: LineInformation, i: number): JSX.Element => {
@@ -522,8 +593,8 @@ class DiffViewer extends React.Component<
 				}
 
 				const diffNodes = splitView
-					? this.renderSplitView(line, i)
-					: this.renderInlineView(line, i);
+					? this.renderSplitView(line, i, commitMap, authorMinW)
+					: this.renderInlineView(line, i, commitMap, authorMinW);
 
 				if (currentPosition === extraLines && skippedLines.length > 0) {
 					const { length } = skippedLines;

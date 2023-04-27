@@ -6,7 +6,14 @@ export declare enum LineNumberPrefix {
     LEFT = "L",
     RIGHT = "R"
 }
+export interface CommitInfo {
+    commitUrl: string;
+    message: string;
+    authorName: string;
+    committedDate: string;
+}
 export interface ReactDiffViewerProps {
+    commitMap: Map<number, CommitInfo>;
     oldValue: string;
     newValue: string;
     splitView?: boolean;
@@ -20,6 +27,7 @@ export interface ReactDiffViewerProps {
     renderContent?: (source: string) => JSX.Element;
     codeFoldMessageRenderer?: (totalFoldedLines: number, leftStartLineNumber: number, rightStartLineNumber: number) => JSX.Element;
     onLineNumberClick?: (lineId: string, event: React.MouseEvent<HTMLTableCellElement>) => void;
+    onAuthorClick?: (commitInfo: CommitInfo, event: React.MouseEvent<HTMLTableCellElement>) => void;
     highlightLines?: string[];
     styles?: ReactDiffViewerStylesOverride;
     useDarkTheme?: boolean;
@@ -31,6 +39,7 @@ export interface ReactDiffViewerState {
 }
 declare class DiffViewer extends React.Component<ReactDiffViewerProps, ReactDiffViewerState> {
     private styles;
+    private lastAuthorLines;
     static defaultProps: ReactDiffViewerProps;
     static propTypes: {
         oldValue: PropTypes.Validator<string>;
@@ -40,6 +49,7 @@ declare class DiffViewer extends React.Component<ReactDiffViewerProps, ReactDiff
         compareMethod: PropTypes.Requireable<any>;
         renderContent: PropTypes.Requireable<(...args: any[]) => any>;
         onLineNumberClick: PropTypes.Requireable<(...args: any[]) => any>;
+        onAuthorClick: PropTypes.Requireable<(...args: any[]) => any>;
         extraLinesSurroundingDiff: PropTypes.Requireable<number>;
         styles: PropTypes.Requireable<object>;
         hideLineNumbers: PropTypes.Requireable<boolean>;
@@ -75,6 +85,7 @@ declare class DiffViewer extends React.Component<ReactDiffViewerProps, ReactDiff
      * @param id Line id of a line.
      */
     private onLineNumberClickProxy;
+    private onAuthorClickProxy;
     /**
      * Maps over the word diff and constructs the required React elements to show word diff.
      *
@@ -96,6 +107,7 @@ declare class DiffViewer extends React.Component<ReactDiffViewerProps, ReactDiff
      * @param additionalPrefix Similar to prefix but for additional line number.
      */
     private renderLine;
+    private renderAuthor;
     /**
      * Generates lines for split view.
      *
@@ -113,7 +125,7 @@ declare class DiffViewer extends React.Component<ReactDiffViewerProps, ReactDiff
      * @param obj.right Life diff information for the removed section of the inline view.
      * @param index React key for the lines.
      */
-    renderInlineView: ({ left, right }: LineInformation, index: number) => JSX.Element;
+    renderInlineView: ({ left, right }: LineInformation, index: number, commitMap: Map<number, CommitInfo>, authorMinW: number) => JSX.Element;
     /**
      * Returns a function with clicked block number in the closure.
      *
