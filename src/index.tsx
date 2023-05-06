@@ -80,7 +80,7 @@ export interface ReactDiffViewerProps {
 	leftTitle?: string | JSX.Element;
 	// Title for left column
 	rightTitle?: string | JSX.Element;
-	onBlockClick?: (isExpand: boolean) => void;
+	onBlockClick?: () => void;
 }
 
 export interface ReactDiffViewerState {
@@ -167,7 +167,7 @@ class DiffViewer extends React.Component<
 		this.setState({
 			expandedBlocks: prevState,
 		}, () => {
-			this.props.onBlockClick && this.props.onBlockClick(true);
+			this.props.onBlockClick && this.props.onBlockClick();
 		});
 	};
 
@@ -177,7 +177,7 @@ class DiffViewer extends React.Component<
 			this.setState({
 				expandedBlocks: expandedBlocks.filter(item => item !== id),
 			}, () => {
-				this.props.onBlockClick && this.props.onBlockClick(false);
+				this.props.onBlockClick && this.props.onBlockClick();
 			});
 		}
 	};
