@@ -33,7 +33,7 @@ export interface ReactDiffViewerProps {
     useDarkTheme?: boolean;
     leftTitle?: string | JSX.Element;
     rightTitle?: string | JSX.Element;
-    onBlockClick?: (isExpand: boolean) => void;
+    onBlockClick?: () => void;
 }
 export interface ReactDiffViewerState {
     expandedBlocks?: number[];
@@ -41,7 +41,7 @@ export interface ReactDiffViewerState {
 declare class DiffViewer extends React.Component<ReactDiffViewerProps, ReactDiffViewerState> {
     private styles;
     private lastAuthorLines;
-    private leftBlockLineNumberMap;
+    private blockLineNumberMap;
     static defaultProps: ReactDiffViewerProps;
     static propTypes: {
         oldValue: PropTypes.Validator<string>;

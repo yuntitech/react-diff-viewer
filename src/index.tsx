@@ -94,7 +94,7 @@ class DiffViewer extends React.Component<
 > {
 	private styles: ReactDiffViewerStyles;
 	private lastAuthorLines:number[] = [0];
-    private leftBlockLineNumberMap = new Map<number, number>();
+    private blockLineNumberMap = new Map<number, number>();
 
 	public static defaultProps: ReactDiffViewerProps = {
 		oldValue: '',
@@ -500,14 +500,14 @@ class DiffViewer extends React.Component<
 	 * @param id Cold fold block id.
 	 * @param isExpand
 	 */
-	private onBlockClickProxy = (params: { id: number, isCollapse: boolean, leftBlockLineNumber: number, num: number }): any => (): void => {
-		const {isCollapse, id, leftBlockLineNumber, num} = params;
+	private onBlockClickProxy = (params: { id: number, isCollapse: boolean, blockLineNumber: number, num: number }): any => (): void => {
+		const {isCollapse, id, blockLineNumber, num} = params;
 		if (isCollapse) {
 			this.onBlockCollapse(id);
-			this.leftBlockLineNumberMap.delete(leftBlockLineNumber);
+			this.blockLineNumberMap.delete(blockLineNumber);
 		} else {
 			this.onBlockExpand(id);
-			this.leftBlockLineNumberMap.set(leftBlockLineNumber, num);
+			this.blockLineNumberMap.set(blockLineNumber, num);
 		}
 	}
 
@@ -544,7 +544,7 @@ class DiffViewer extends React.Component<
 				<a onClick={this.onBlockClickProxy({
 					id: blockNumber,
 					isCollapse: showCollapse,
-					leftBlockLineNumber,
+					blockLineNumber: rightBlockLineNumber,
 					num,
 				})}
 				   tabIndex={0}>
@@ -642,12 +642,12 @@ class DiffViewer extends React.Component<
 				const diffNodes = splitView
 					? this.renderSplitView(line, i, commitMap, authorMinW)
 					: this.renderInlineView(line, i, commitMap, authorMinW);
-				const showCollapse = this.leftBlockLineNumberMap.has(line.left.lineNumber);
+				const showCollapse = this.blockLineNumberMap.has(line.right.lineNumber);
 				if ((currentPosition === extraLines && skippedLines.length > 0) || showCollapse) {
 					let { length } = skippedLines;
 					skippedLines = [];
 					if (showCollapse) {
-						length = this.leftBlockLineNumberMap.get(line.left.lineNumber);
+						length = this.blockLineNumberMap.get(line.right.lineNumber);
 					}
 					return (
 						<React.Fragment key={i}>
