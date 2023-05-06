@@ -293,7 +293,6 @@ class DiffViewer extends React.Component<
 							[this.styles.diffRemoved]: removed,
 							[this.styles.highlightedGutter]: highlightLine,
 						})}>
-						{this.renderAuthor({lineNumber, prefix, added, removed, isRightEmpty, commitMap, authorMinW})}
 					</td>
 				)}
 				{!this.props.splitView && !this.props.hideLineNumbers && (
@@ -605,7 +604,7 @@ class DiffViewer extends React.Component<
 			linesOffset,
 			linesOffsetOfRight,
 		);
-		const authorMinW = diffLines[diffLines.length - 1] >= 1000 ? 60 : 52;
+		// const authorMinW = diffLines[diffLines.length - 1] >= 1000 ? 60 : 52;
 		const extraLines =
 			this.props.extraLinesSurroundingDiff < 0
 			  ? 0
@@ -640,8 +639,8 @@ class DiffViewer extends React.Component<
 				}
 
 				const diffNodes = splitView
-					? this.renderSplitView(line, i, commitMap, authorMinW)
-					: this.renderInlineView(line, i, commitMap, authorMinW);
+					? this.renderSplitView(line, i, commitMap, 0)
+					: this.renderInlineView(line, i, commitMap, 0);
 				const showCollapse = this.blockLineNumberMap.has(line.right.lineNumber);
 				if ((currentPosition === extraLines && skippedLines.length > 0) || showCollapse) {
 					let { length } = skippedLines;
