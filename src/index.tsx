@@ -80,7 +80,7 @@ export interface ReactDiffViewerProps {
 	leftTitle?: string | JSX.Element;
 	// Title for left column
 	rightTitle?: string | JSX.Element;
-	onBlockExpand?: (id: number) => void;
+	onBlockClick?: (isExpand: boolean) => void;
 }
 
 export interface ReactDiffViewerState {
@@ -94,6 +94,7 @@ class DiffViewer extends React.Component<
 > {
 	private styles: ReactDiffViewerStyles;
 	private lastAuthorLines:number[] = [0];
+    private leftBlockLineNumberMap = new Map<number, number>();
 
 	public static defaultProps: ReactDiffViewerProps = {
 		oldValue: '',
@@ -130,7 +131,7 @@ class DiffViewer extends React.Component<
 		rightTitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
 		linesOffset: PropTypes.number,
 		linesOffsetOfRight: PropTypes.number,
-		onBlockExpand: PropTypes.func,
+		onBlockClick: PropTypes.func,
 	};
 
 	public constructor(props: ReactDiffViewerProps) {
@@ -166,8 +167,19 @@ class DiffViewer extends React.Component<
 		this.setState({
 			expandedBlocks: prevState,
 		}, () => {
-			this.props.onBlockExpand && this.props.onBlockExpand(id);
+			this.props.onBlockClick && this.props.onBlockClick(true);
 		});
+	};
+
+	private onBlockCollapse = (id: number): void => {
+		const {expandedBlocks} = this.state;
+		if (expandedBlocks.length > 0) {
+			this.setState({
+				expandedBlocks: expandedBlocks.filter(item => item !== id),
+			}, () => {
+				this.props.onBlockClick && this.props.onBlockClick(false);
+			});
+		}
 	};
 
 	/**
@@ -486,9 +498,18 @@ class DiffViewer extends React.Component<
 	 * Returns a function with clicked block number in the closure.
 	 *
 	 * @param id Cold fold block id.
+	 * @param isExpand
 	 */
-	private onBlockClickProxy = (id: number): any => (): void =>
-		this.onBlockExpand(id);
+	private onBlockClickProxy = (params: { id: number, isCollapse: boolean, leftBlockLineNumber: number, num: number }): any => (): void => {
+		const {isCollapse, id, leftBlockLineNumber, num} = params;
+		if (isCollapse) {
+			this.onBlockCollapse(id);
+			this.leftBlockLineNumberMap.delete(leftBlockLineNumber);
+		} else {
+			this.onBlockExpand(id);
+			this.leftBlockLineNumberMap.set(leftBlockLineNumber, num);
+		}
+	}
 
 	/**
 	 * Generates cold fold block. It also uses the custom message renderer when available to show
@@ -498,14 +519,17 @@ class DiffViewer extends React.Component<
 	 * @param blockNumber Code fold block id.
 	 * @param leftBlockLineNumber First left line number after the current code fold block.
 	 * @param rightBlockLineNumber First right line number after the current code fold block.
+	 * @param showCollapse
 	 */
 	private renderSkippedLineIndicator = (
 		num: number,
 		blockNumber: number,
 		leftBlockLineNumber: number,
 		rightBlockLineNumber: number,
+		showCollapse: boolean = false,
 	): JSX.Element => {
 		const { hideLineNumbers, splitView } = this.props;
+		const operateText = showCollapse ? 'Collapse' : 'Expand';
 		const message = this.props.codeFoldMessageRenderer ? (
 			this.props.codeFoldMessageRenderer(
 				num,
@@ -513,11 +537,17 @@ class DiffViewer extends React.Component<
 				rightBlockLineNumber,
 			)
 		) : (
-			<pre className={this.styles.codeFoldContent}>Expand {num} lines ...</pre>
+			<pre className={this.styles.codeFoldContent}>{`${operateText} ${num} lines ...`}</pre>
 		);
 		const content = (
 			<td>
-				<a onClick={this.onBlockClickProxy(blockNumber)} tabIndex={0}>
+				<a onClick={this.onBlockClickProxy({
+					id: blockNumber,
+					isCollapse: showCollapse,
+					leftBlockLineNumber,
+					num,
+				})}
+				   tabIndex={0}>
 					{message}
 				</a>
 			</td>
@@ -612,10 +642,13 @@ class DiffViewer extends React.Component<
 				const diffNodes = splitView
 					? this.renderSplitView(line, i, commitMap, authorMinW)
 					: this.renderInlineView(line, i, commitMap, authorMinW);
-
-				if (currentPosition === extraLines && skippedLines.length > 0) {
-					const { length } = skippedLines;
+				const showCollapse = this.leftBlockLineNumberMap.has(line.left.lineNumber);
+				if ((currentPosition === extraLines && skippedLines.length > 0) || showCollapse) {
+					let { length } = skippedLines;
 					skippedLines = [];
+					if (showCollapse) {
+						length = this.leftBlockLineNumberMap.get(line.left.lineNumber);
+					}
 					return (
 						<React.Fragment key={i}>
 							{this.renderSkippedLineIndicator(
@@ -623,6 +656,7 @@ class DiffViewer extends React.Component<
 								diffBlockStart,
 								line.left.lineNumber,
 								line.right.lineNumber,
+								showCollapse,
 							)}
 							{diffNodes}
 						</React.Fragment>

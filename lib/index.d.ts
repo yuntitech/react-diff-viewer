@@ -33,7 +33,7 @@ export interface ReactDiffViewerProps {
     useDarkTheme?: boolean;
     leftTitle?: string | JSX.Element;
     rightTitle?: string | JSX.Element;
-    onBlockExpand?: (id: number) => void;
+    onBlockClick?: (isExpand: boolean) => void;
 }
 export interface ReactDiffViewerState {
     expandedBlocks?: number[];
@@ -41,6 +41,7 @@ export interface ReactDiffViewerState {
 declare class DiffViewer extends React.Component<ReactDiffViewerProps, ReactDiffViewerState> {
     private styles;
     private lastAuthorLines;
+    private leftBlockLineNumberMap;
     static defaultProps: ReactDiffViewerProps;
     static propTypes: {
         oldValue: PropTypes.Validator<string>;
@@ -60,7 +61,7 @@ declare class DiffViewer extends React.Component<ReactDiffViewerProps, ReactDiff
         rightTitle: PropTypes.Requireable<string | PropTypes.ReactElementLike>;
         linesOffset: PropTypes.Requireable<number>;
         linesOffsetOfRight: PropTypes.Requireable<number>;
-        onBlockExpand: PropTypes.Requireable<(...args: any[]) => any>;
+        onBlockClick: PropTypes.Requireable<(...args: any[]) => any>;
     };
     constructor(props: ReactDiffViewerProps);
     /**
@@ -73,6 +74,7 @@ declare class DiffViewer extends React.Component<ReactDiffViewerProps, ReactDiff
      * this value is used to expand/fold unmodified code.
      */
     private onBlockExpand;
+    private onBlockCollapse;
     /**
      * Computes final styles for the diff viewer. It combines the default styles with the user
      * supplied overrides. The computed styles are cached with performance in mind.
@@ -133,6 +135,7 @@ declare class DiffViewer extends React.Component<ReactDiffViewerProps, ReactDiff
      * Returns a function with clicked block number in the closure.
      *
      * @param id Cold fold block id.
+     * @param isExpand
      */
     private onBlockClickProxy;
     /**
@@ -143,6 +146,7 @@ declare class DiffViewer extends React.Component<ReactDiffViewerProps, ReactDiff
      * @param blockNumber Code fold block id.
      * @param leftBlockLineNumber First left line number after the current code fold block.
      * @param rightBlockLineNumber First right line number after the current code fold block.
+     * @param showCollapse
      */
     private renderSkippedLineIndicator;
     /**
