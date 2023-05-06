@@ -117,6 +117,7 @@ declare class DiffViewer extends React.Component<ReactDiffViewerProps, ReactDiff
      * @param index React key for the lines.
      */
     private renderSplitView;
+    private getMarkParams;
     /**
      * Generates lines for inline view.
      *

@@ -362,8 +362,9 @@ class DiffViewer extends React.Component<
 		commitMap: Map<number, CommitInfo>,
 		authorMinW: number,
 	): JSX.Element => {
+		const params = this.getMarkParams({left, right});
 		return (
-			<tr key={index} className={this.styles.line}>
+			<tr key={index} className={this.styles.line} {...params}>
 				{this.renderLine(
 					left.lineNumber,
 					left.type,
@@ -389,6 +390,18 @@ class DiffViewer extends React.Component<
 			</tr>
 		);
 	};
+
+	private getMarkParams = (lineInformation: LineInformation) => {
+		const {left, right} = lineInformation;
+		let params = {};
+		if (left.type === DiffType.REMOVED) {
+			params = {id: "removed", num: left.lineNumber};
+		}
+		if (right.type === DiffType.ADDED) {
+			params = {id: "add", num: right.lineNumber};
+		}
+		return params;
+	}
 
 	/**
 	 * Generates lines for inline view.
@@ -457,9 +470,9 @@ class DiffViewer extends React.Component<
 				right.lineNumber,
 			);
 		}
-
+		const params = this.getMarkParams({left, right});
 		return (
-			<tr key={index} className={this.styles.line}>
+			<tr key={index} className={this.styles.line} {...params}>
 				{content}
 			</tr>
 		);
