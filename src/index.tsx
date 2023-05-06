@@ -293,6 +293,7 @@ class DiffViewer extends React.Component<
 							[this.styles.diffRemoved]: removed,
 							[this.styles.highlightedGutter]: highlightLine,
 						})}>
+						<pre className={this.styles.lineNumber}>{lineNumber}</pre>
 					</td>
 				)}
 				{!this.props.splitView && !this.props.hideLineNumbers && (
