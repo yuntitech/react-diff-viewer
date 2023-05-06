@@ -33,6 +33,7 @@ export interface ReactDiffViewerProps {
     useDarkTheme?: boolean;
     leftTitle?: string | JSX.Element;
     rightTitle?: string | JSX.Element;
+    onBlockExpand?: (id: number) => void;
 }
 export interface ReactDiffViewerState {
     expandedBlocks?: number[];
@@ -59,6 +60,7 @@ declare class DiffViewer extends React.Component<ReactDiffViewerProps, ReactDiff
         rightTitle: PropTypes.Requireable<string | PropTypes.ReactElementLike>;
         linesOffset: PropTypes.Requireable<number>;
         linesOffsetOfRight: PropTypes.Requireable<number>;
+        onBlockExpand: PropTypes.Requireable<(...args: any[]) => any>;
     };
     constructor(props: ReactDiffViewerProps);
     /**

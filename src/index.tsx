@@ -80,6 +80,7 @@ export interface ReactDiffViewerProps {
 	leftTitle?: string | JSX.Element;
 	// Title for left column
 	rightTitle?: string | JSX.Element;
+	onBlockExpand?: (id: number) => void;
 }
 
 export interface ReactDiffViewerState {
@@ -129,6 +130,7 @@ class DiffViewer extends React.Component<
 		rightTitle: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
 		linesOffset: PropTypes.number,
 		linesOffsetOfRight: PropTypes.number,
+		onBlockExpand: PropTypes.func,
 	};
 
 	public constructor(props: ReactDiffViewerProps) {
@@ -163,6 +165,8 @@ class DiffViewer extends React.Component<
 
 		this.setState({
 			expandedBlocks: prevState,
+		}, () => {
+			this.props.onBlockExpand && this.props.onBlockExpand(id);
 		});
 	};
 
