@@ -529,7 +529,16 @@ class DiffViewer extends React.Component<
 		showCollapse: boolean = false,
 	): JSX.Element => {
 		const { hideLineNumbers, splitView } = this.props;
-		const operateText = showCollapse ? 'Collapse' : 'Expand';
+		const operateText = showCollapse ? '折叠' : '展开';
+		const collapseStyle = showCollapse ? {
+			style: {
+				backgroundColor: 'transparent',
+				color: 'rgba(0,0,0,0.3)',
+				fontSize: 5,
+				height: 5,
+			}
+		} : {};
+		const collapseLineTdStyle = showCollapse ? {style: {backgroundColor: '#f7f7f7'}} : {};
 		const message = this.props.codeFoldMessageRenderer ? (
 			this.props.codeFoldMessageRenderer(
 				num,
@@ -537,7 +546,7 @@ class DiffViewer extends React.Component<
 				rightBlockLineNumber,
 			)
 		) : (
-			<pre className={this.styles.codeFoldContent}>{`${operateText} ${num} lines ...`}</pre>
+			<pre className={this.styles.codeFoldContent} {...collapseStyle}>{`${operateText} ${num} 行 ...`}</pre>
 		);
 		const content = (
 			<td>
@@ -556,8 +565,11 @@ class DiffViewer extends React.Component<
 		return (
 			<tr
 				key={`${leftBlockLineNumber}-${rightBlockLineNumber}`}
-				className={this.styles.codeFold}>
-				{!hideLineNumbers && <td className={this.styles.codeFoldGutter} />}
+				className={this.styles.codeFold}
+				{...collapseStyle}
+			>
+				{!hideLineNumbers &&
+					<td className={this.styles.codeFoldGutter} {...collapseLineTdStyle}/>}
 				<td
 					className={cn({
 						[this.styles.codeFoldGutter]: isUnifiedViewWithoutLineNumbers,
@@ -573,7 +585,7 @@ class DiffViewer extends React.Component<
 				) : (
 					<React.Fragment>
 						{content}
-						<td />
+						<td {...collapseLineTdStyle}/>
 					</React.Fragment>
 				)}
 
